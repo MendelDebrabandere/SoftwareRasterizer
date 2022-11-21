@@ -49,7 +49,8 @@ namespace dae
 		int m_Height{};
 
 		//Function that transforms the vertices from the mesh from World space to Screen space
-		void VertexTransformationFunction(const std::vector<Vertex>& vertices_in, std::vector<Vertex>& vertices_out) const; //W1 Version
+		void VertexTransformationFunction(const std::vector<Vertex>& vertices_in, std::vector<Vertex_Out>& vertices_out) const; //W1 Version
+		void VertexTransformationFunction(std::vector<Mesh>& mesh_in) const; // Added week 2
 
 		bool IsPixelInBoundingBoxOfTriangle(int px, int py, const Vector2& v0, const Vector2& v1, const Vector2& v2) const;
 
