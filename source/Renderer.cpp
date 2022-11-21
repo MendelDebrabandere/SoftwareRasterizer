@@ -54,27 +54,46 @@ void Renderer::Render()
 	//Define triangle - Vertices in NDC space
 	std::vector<Vertex> vertices_world
 	{
-		//Triangle 0
-		{{0.f, 2.f, 0.f}, {1,0,0}},
-		{{1.5f, -1.f, 0.f}, {1,0,0}},
-		{{-1.5f, -1.f, 0.f}, {1,0,0}},
-		
+		{ {-3.f, 3.f, -2.f},	{1,0,0}},
+		{ {0.f, 3.f, -2.f},		{1,0,0}},
+		{ {3.f, 3.f, -2.f},		{1,0,0}},
+		{ {-3.f, 0.f, -2.f},	{1,0,0}},
+		{ {0.f, 0.f, -2.f},		{1,0,0}},
+		{ {3.f, 0.f, -2.f},		{1,0,0}},
+		{ {-3.f, -3.f, -2.f},	{1,0,0}},
+		{ {0.f, -3.f, -2.f},	{1,0,0}},
+		{ {3.f, -3.f, -2.f},	{1,0,0}}
+	};
 
-		//Triangle 1
-		{{0.f, 4.f, 2.f}, {1,0,0}},
-		{{3.f, -2.f, 2.f}, {0,1,0}},
-		{{-3.f, -2.f, 2.f}, {0,0,1}}
+	std::vector<int> triangleIndexes
+	{
+		3, 0, 4,
+		0, 1, 4,
+		4, 1, 5,
+		1, 2, 5,
+		6, 3, 7,
+		3, 4, 7,
+		7, 4, 8,
+		4, 5, 8
 	};
 
 	std::vector<Vertex> vertices_screen{};
 
 	VertexTransformationFunction(vertices_world, vertices_screen);
 
-	for (int vertexIdx{}; vertexIdx < vertices_screen.size(); vertexIdx += 3)
+	for (int vertexIdx{}; vertexIdx < triangleIndexes.size(); vertexIdx += 3)
 	{
-		const Vector2 v0{ vertices_screen[vertexIdx].position.x ,vertices_screen[vertexIdx].position.y };
-		const Vector2 v1{ vertices_screen[vertexIdx + 1].position.x ,vertices_screen[vertexIdx + 1].position.y };
-		const Vector2 v2{ vertices_screen[vertexIdx + 2].position.x ,vertices_screen[vertexIdx + 2].position.y };
+		const int vertexIdx0{ triangleIndexes[vertexIdx] };
+		const int vertexIdx1{ triangleIndexes[vertexIdx + 1] };
+		const int vertexIdx2{ triangleIndexes[vertexIdx + 2] };
+
+		const Vector2 v0{ vertices_screen[vertexIdx0].position.x ,vertices_screen[vertexIdx0].position.y };
+		const Vector2 v1{ vertices_screen[vertexIdx1].position.x ,vertices_screen[vertexIdx1].position.y };
+		const Vector2 v2{ vertices_screen[vertexIdx2].position.x ,vertices_screen[vertexIdx2].position.y };
+
+		const ColorRGB colorV0{ vertices_screen[vertexIdx0].color };
+		const ColorRGB colorV1{ vertices_screen[vertexIdx1].color };
+		const ColorRGB colorV2{ vertices_screen[vertexIdx2].color };
 
 		const Vector2 edge01 = v1 - v0;
 		const Vector2 edge12 = v2 - v1;
@@ -82,9 +101,6 @@ void Renderer::Render()
 
 		const float areaTriangle{ Vector2::Cross(v1 - v0, v2 - v0) };
 
-		const ColorRGB colorV0{ vertices_screen[vertexIdx].color };
-		const ColorRGB colorV1{ vertices_screen[vertexIdx + 1].color };
-		const ColorRGB colorV2{ vertices_screen[vertexIdx + 2].color };
 
 
 		//RENDER LOGIC
@@ -98,7 +114,7 @@ void Renderer::Render()
 
 				ColorRGB finalColor = colors::Black;
 
-				Vector2 pixel = { (float)px,(float)py };
+				Vector2 pixel = { float(px), float(py) };
 
 
 				const Vector2 directionV0 = pixel - v0;
@@ -123,9 +139,9 @@ void Renderer::Render()
 
 				const float depthWeight =
 				{
-					weightV0 * vertices_screen[vertexIdx].position.z +
-					weightV1 * vertices_screen[vertexIdx + 1].position.z +
-					weightV2 * vertices_screen[vertexIdx + 2].position.z
+					weightV0 * vertices_screen[vertexIdx0].position.z +
+					weightV1 * vertices_screen[vertexIdx1].position.z +
+					weightV2 * vertices_screen[vertexIdx2].position.z
 				};
 
 				if (depthWeight > m_pDepthBufferPixels[px * m_Height + py])
