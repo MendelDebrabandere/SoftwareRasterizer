@@ -29,6 +29,8 @@ Renderer::Renderer(SDL_Window* pWindow) :
 
 	//Initialize Camera
 	m_Camera.Initialize(60.f, { 0.f, 0.f, -10.f });
+
+	m_pTexture = m_pTexture->LoadFromFile("resources/uv_grid_2.png");
 }
 
 Renderer::~Renderer()
@@ -53,56 +55,57 @@ void Renderer::Render()
 	ClearBackground();
 
 	// Define Mesh
-	//std::vector<Mesh> meshes_world
-	//{
-	//	Mesh{
-	//			{
-	//			Vertex{{-3,3,-2}},
-	//			Vertex{{0,3,-2}},
-	//			Vertex{{3,3,-2}},
-	//			Vertex{{-3,0,-2}},
-	//			Vertex{{0,0,-2}},
-	//			Vertex{{3,0,-2}},
-	//			Vertex{{-3,-3,-2}},
-	//			Vertex{{0,-3,-2}},
-	//			Vertex{{3,-3,-2}}
-	//			},
-	//	{
-	//		3,0,4,1,5,2,
-	//		2,6,
-	//		6,3,7,4,8,5
-	//	},
-	//	PrimitiveTopology::TriangleStrip
-	//	}
-	//};
 	std::vector<Mesh> meshes_world
 	{
 		Mesh{
 				{
-				Vertex{{-3,3,-2}},
-				Vertex{{0,3,-2}},
-				Vertex{{3,3,-2}},
-				Vertex{{-3,0,-2}},
-				Vertex{{0,0,-2}},
-				Vertex{{3,0,-2}},
-				Vertex{{-3,-3,-2}},
-				Vertex{{0,-3,-2}},
-				Vertex{{3,-3,-2}}
+				Vertex{Vector3{-3,3,-2},	ColorRGB{1,1,1},	Vector2{0,0}},
+				Vertex{Vector3{0,3,-2},		ColorRGB{1,1,1},	Vector2{0.5f, 0}},
+				Vertex{Vector3{3,3,-2},		ColorRGB{1,1,1},	Vector2{1,0}},
+				Vertex{Vector3{-3,0,-2},	ColorRGB{1,1,1},	Vector2{0,0.5f}},
+				Vertex{Vector3{0,0,-2},		ColorRGB{1,1,1},	Vector2{0.5f,0.5f}},
+				Vertex{Vector3{3,0,-2},		ColorRGB{1,1,1},	Vector2{1,0.5f}},
+				Vertex{Vector3{-3,-3,-2},	ColorRGB{1,1,1},	Vector2{0,1}},
+				Vertex{Vector3{0,-3,-2},	ColorRGB{1,1,1},	Vector2{0.5f,1}},
+				Vertex{Vector3{3,-3,-2},	ColorRGB{1,1,1},	Vector2{1,1}}
 				},
 		{
-			3,0,1,	1,4,3,	4,1,2,
-			2,5,4,	6,3,4,	4,7,6,
-			7,4,5,	5,8,7
+			3,0,4,1,5,2,
+			2,6,
+			6,3,7,4,8,5
 		},
-		PrimitiveTopology::TriangleList
+		PrimitiveTopology::TriangleStrip
 		}
 	};
+	//std::vector<Mesh> meshes_world
+	//{
+	//	Mesh{
+	//		{
+	//		Vertex{Vector3{-3,3,-2},	ColorRGB{1,1,1},	Vector2{0,0}},
+	//		Vertex{Vector3{0,3,-2},		ColorRGB{1,1,1},	Vector2{0.5f, 0}},
+	//		Vertex{Vector3{3,3,-2},		ColorRGB{1,1,1},	Vector2{1,0}},
+	//		Vertex{Vector3{-3,0,-2},	ColorRGB{1,1,1},	Vector2{0,0.5f}},
+	//		Vertex{Vector3{0,0,-2},		ColorRGB{1,1,1},	Vector2{0.5f,0.5f}},
+	//		Vertex{Vector3{3,0,-2},		ColorRGB{1,1,1},	Vector2{1,0.5f}},
+	//		Vertex{Vector3{-3,-3,-2},	ColorRGB{1,1,1},	Vector2{0,1}},
+	//		Vertex{Vector3{0,-3,-2},	ColorRGB{1,1,1},	Vector2{0.5f,1}},
+	//		Vertex{Vector3{3,-3,-2},	ColorRGB{1,1,1},	Vector2{1,1}}
+	//		},
+	//	{
+	//		3,0,1,	1,4,3,	4,1,2,
+	//		2,5,4,	6,3,4,	4,7,6,
+	//		7,4,5,	5,8,7
+	//	},
+	//	PrimitiveTopology::TriangleList
+	//	}
+	//};
+	std::vector<Mesh> meshes_camera = meshes_world;
 
-	VertexTransformationFunction(meshes_world);
+	VertexTransformationFunction(meshes_world, meshes_camera);
 
-	for (const Mesh& mesh : meshes_world)
+	for (const Mesh& mesh : meshes_camera)
 	{
-		for (int currIdx{}; currIdx < meshes_world[0].indices.size(); ++currIdx)
+		for (int currIdx{}; currIdx < mesh.indices.size(); ++currIdx)
 		{
 			int vertexIdx0{};
 			int vertexIdx1{};
@@ -111,27 +114,27 @@ void Renderer::Render()
 
 			if (meshes_world[0].primitiveTopology == PrimitiveTopology::TriangleList)
 			{
-				vertexIdx0 = meshes_world[0].indices[currIdx];
-				vertexIdx1 = meshes_world[0].indices[currIdx + 1];
-				vertexIdx2 = meshes_world[0].indices[currIdx + 2];
+				vertexIdx0 = mesh.indices[currIdx];
+				vertexIdx1 = mesh.indices[currIdx + 1];
+				vertexIdx2 = mesh.indices[currIdx + 2];
 				currIdx += 2;
 			}
-			else if (meshes_world[0].primitiveTopology == PrimitiveTopology::TriangleStrip)
+			else if (mesh.primitiveTopology == PrimitiveTopology::TriangleStrip)
 			{
-				vertexIdx0 = meshes_world[0].indices[currIdx];
+				vertexIdx0 = mesh.indices[currIdx];
 
 				if (currIdx % 2 == 0)
 				{
-					vertexIdx1 = meshes_world[0].indices[currIdx + 1];
-					vertexIdx2 = meshes_world[0].indices[currIdx + 2];
+					vertexIdx1 = mesh.indices[currIdx + 1];
+					vertexIdx2 = mesh.indices[currIdx + 2];
 				}
 				else
 				{
-					vertexIdx1 = meshes_world[0].indices[currIdx + 2];
-					vertexIdx2 = meshes_world[0].indices[currIdx + 1];
+					vertexIdx1 = mesh.indices[currIdx + 2];
+					vertexIdx2 = mesh.indices[currIdx + 1];
 				}
 
-				if (currIdx + 3 >= meshes_world[0].indices.size())
+				if (currIdx + 3 >= mesh.indices.size())
 					currIdx += 2;
 			}
 			else
@@ -139,13 +142,17 @@ void Renderer::Render()
 				assert(false, "non existing PrimitiveTopology");
 			}
 
-			const Vector2 v0 = meshes_world[0].vertices_out[vertexIdx0].position.GetXY();
-			const Vector2 v1 = meshes_world[0].vertices_out[vertexIdx1].position.GetXY();
-			const Vector2 v2 = meshes_world[0].vertices_out[vertexIdx2].position.GetXY();
+			const Vector2 v0 = mesh.vertices[vertexIdx0].position.GetXY();
+			const Vector2 v1 = mesh.vertices[vertexIdx1].position.GetXY();
+			const Vector2 v2 = mesh.vertices[vertexIdx2].position.GetXY();
 
-			const ColorRGB colorV0{ meshes_world[0].vertices_out[vertexIdx0].color };
-			const ColorRGB colorV1{ meshes_world[0].vertices_out[vertexIdx1].color };
-			const ColorRGB colorV2{ meshes_world[0].vertices_out[vertexIdx2].color };
+			//const ColorRGB colorV0{ mesh.vertices[vertexIdx0].color };
+			//const ColorRGB colorV1{ mesh.vertices[vertexIdx1].color };
+			//const ColorRGB colorV2{ mesh.vertices[vertexIdx2].color };
+
+			const Vector2 v0uv = mesh.vertices[vertexIdx0].uv;
+			const Vector2 v1uv = mesh.vertices[vertexIdx1].uv;
+			const Vector2 v2uv = mesh.vertices[vertexIdx2].uv;
 
 			const Vector2 edge01 = v1 - v0;
 			const Vector2 edge12 = v2 - v1;
@@ -153,6 +160,8 @@ void Renderer::Render()
 
 			const float areaTriangle{ Vector2::Cross(v1 - v0, v2 - v0) };
 
+			if (areaTriangle <= 0.0001f)
+				continue;
 
 
 			//RENDER LOGIC
@@ -191,9 +200,9 @@ void Renderer::Render()
 
 					const float depthWeight =
 					{
-						weightV0 * meshes_world[0].vertices_out[vertexIdx0].position.z +
-						weightV1 * meshes_world[0].vertices_out[vertexIdx1].position.z +
-						weightV2 * meshes_world[0].vertices_out[vertexIdx2].position.z
+						weightV0 * meshes_world[0].vertices[vertexIdx0].position.z +
+						weightV1 * meshes_world[0].vertices[vertexIdx1].position.z +
+						weightV2 * meshes_world[0].vertices[vertexIdx2].position.z
 					};
 
 					if (depthWeight > m_pDepthBufferPixels[px * m_Height + py])
@@ -201,7 +210,15 @@ void Renderer::Render()
 
 					m_pDepthBufferPixels[px * m_Height + py] = depthWeight;
 
-					finalColor = colorV0 * weightV0 + colorV1 * weightV1 + colorV2 * weightV2;
+					//finalColor = colorV0 * weightV0 + colorV1 * weightV1 + colorV2 * weightV2;
+
+					const float Z0{ mesh.vertices[vertexIdx0].position.z };
+					const float Z1{ mesh.vertices[vertexIdx1].position.z };
+					const float Z2{ mesh.vertices[vertexIdx2].position.z };
+					const float Zinterpolated{ 1 / (1 / Z0 * weightV0 + 1 / Z1 * weightV1 + 1 / Z2 * weightV2) };
+					//Vector2 currUV{ v0uv * weightV0 + v1uv * weightV1 + v2uv * weightV2 };
+					Vector2 currUV{(v0uv/ Z0 * weightV0 + v1uv / Z1 * weightV1 + v2uv / Z2 * weightV2) * Zinterpolated };
+					finalColor = m_pTexture->Sample(currUV);
 
 					//Update Color in Buffer
 					finalColor.MaxToOne();
@@ -223,39 +240,41 @@ void Renderer::Render()
 	SDL_UpdateWindowSurface(m_pWindow);
 }
 
-void Renderer::VertexTransformationFunction(const std::vector<Vertex>& vertices_in, std::vector<Vertex_Out>& vertices_out) const
+void Renderer::VertexTransformationFunction(const std::vector<Vertex>& vertices_in, std::vector<Vertex>& vertices_out) const
 {
 	//Todo > W1 Projection Stage
 	vertices_out.clear();
 	vertices_out.reserve(vertices_in.size());
 
-	for (const Vertex& vertex : vertices_in)
+	for (Vertex vertex : vertices_in)
 	{
-		Vertex_Out vtx{};
 		// to view space
-		vtx.position = Vector4{ m_Camera.viewMatrix.TransformPoint(vertex.position), 1 };
+		vertex.position = Vector4{ m_Camera.viewMatrix.TransformPoint(vertex.position), 1 };
 
 		// to projection space
-		vtx.position.x /= vertex.position.z;
-		vtx.position.y /= vertex.position.z;
+		vertex.position.x /= vertex.position.z;
+		vertex.position.y /= vertex.position.z;
 
-		vtx.position.x /= (m_Camera.fov * m_AspectRatio);
-		vtx.position.y /= m_Camera.fov;
+		vertex.position.x /= (m_Camera.fov * m_AspectRatio);
+		vertex.position.y /= m_Camera.fov;
 
 		// to screen/raster space
-		vtx.position.x = (vtx.position.x + 1) / 2.f * m_Width;
-		vtx.position.y = (1 - vtx.position.y) / 2.f * m_Height;
+		vertex.position.x = (vertex.position.x + 1) / 2.f * m_Width;
+		vertex.position.y = (1 - vertex.position.y) / 2.f * m_Height;
 
-		vertices_out.push_back(vtx);
+		vertices_out.push_back(vertex);
 	}
 
 }
 
-void Renderer::VertexTransformationFunction(std::vector<Mesh>& mesh_in) const
+void Renderer::VertexTransformationFunction(const std::vector<Mesh>& mesh_in, std::vector<Mesh>& mesh_out) const
 {
-	for (Mesh& mesh : mesh_in)
+	//mesh_out.clear();
+	//mesh_out.reserve(mesh_in.size());
+
+	for (int i{}; i < mesh_in.size(); ++i)
 	{
-		VertexTransformationFunction(mesh.vertices, mesh.vertices_out);
+		VertexTransformationFunction(mesh_in[i].vertices, mesh_out[i].vertices);
 	}
 }
 
