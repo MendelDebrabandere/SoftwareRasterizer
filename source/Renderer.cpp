@@ -12,6 +12,9 @@
 
 using namespace dae;
 
+#define tuktuk
+//#define UV_grid
+
 Renderer::Renderer(SDL_Window* pWindow) :
 	m_pWindow(pWindow)
 {
@@ -25,17 +28,21 @@ Renderer::Renderer(SDL_Window* pWindow) :
 
 	m_pDepthBufferPixels = new float[m_Width * m_Height];
 
-	m_AspectRatio = float(m_Width) / m_Height;
 
 	//Initialize Camera
-	m_Camera.Initialize(60.f, { 0.f, 0.f, -10.f });
+	m_Camera.Initialize(float(m_Width) / m_Height, 60.f, { 0.f, 0.f, -10.f });
 
-	m_pTexture = m_pTexture->LoadFromFile("resources/uv_grid_2.png");
+#if defined(tuktuk)
+	m_pTexture = m_pTexture->LoadFromFile("resources/tuktuk.png");
+#elif defined(UV_grid)
+	m_pTexture = m_pTexture->LoadFromFile("resources/UV_grid_2.png");
+#endif
 }
 
 Renderer::~Renderer()
 {
 	delete[] m_pDepthBufferPixels;
+	delete m_pTexture;
 }
 
 void Renderer::Update(Timer* pTimer)
@@ -55,6 +62,20 @@ void Renderer::Render()
 	ClearBackground();
 
 	// Define Mesh
+#if defined(tuktuk)
+	std::vector<Mesh> meshes_world{};
+	meshes_world.reserve(1);
+	meshes_world.emplace_back(Mesh{});
+
+	Utils::ParseOBJ("Resources/tuktuk.obj", meshes_world[0].vertices, meshes_world[0].indices);
+
+	const Vector3	position{ m_Camera.origin + Vector3{0, 0, 8} /* + Vector3{0, -3, 15} */ };
+	const Vector3	scale{ 0.5f, 0.5f, 0.5f };
+
+	meshes_world[0].worldMatrix = Matrix::CreateTranslation(Vector3{ 0,0,0 });
+
+
+#elif defined(UV_grid)
 	std::vector<Mesh> meshes_world
 	{
 		Mesh{
@@ -74,7 +95,9 @@ void Renderer::Render()
 			2,6,
 			6,3,7,4,8,5
 		},
-		PrimitiveTopology::TriangleStrip
+		PrimitiveTopology::TriangleStrip,
+		{},
+		Matrix::CreateTranslation(Vector3{0,0,0})
 		}
 	};
 	//std::vector<Mesh> meshes_world
@@ -96,22 +119,26 @@ void Renderer::Render()
 	//		2,5,4,	6,3,4,	4,7,6,
 	//		7,4,5,	5,8,7
 	//	},
-	//	PrimitiveTopology::TriangleList
+	//	PrimitiveTopology::TriangleList,
+	//	{},
+	//	Matrix::CreateTranslation(Vector3{0,0,0})
 	//	}
 	//};
-	std::vector<Mesh> meshes_camera = meshes_world;
+#endif
 
-	VertexTransformationFunction(meshes_world, meshes_camera);
 
-	for (const Mesh& mesh : meshes_camera)
+
+	VertexTransformationFunction(meshes_world);
+
+	for (Mesh& mesh : meshes_world)
 	{
 		for (int currIdx{}; currIdx < mesh.indices.size(); ++currIdx)
 		{
-			int vertexIdx0{};
+ 			int vertexIdx0{};
 			int vertexIdx1{};
 			int vertexIdx2{};
 
-
+			// Updating vertexindeces depending on the certain primitiveTopology
 			if (meshes_world[0].primitiveTopology == PrimitiveTopology::TriangleList)
 			{
 				vertexIdx0 = mesh.indices[currIdx];
@@ -139,49 +166,88 @@ void Renderer::Render()
 			}
 			else
 			{
-				assert(false, "non existing PrimitiveTopology");
+				assert(false);
 			}
 
-			const Vector2 v0 = mesh.vertices[vertexIdx0].position.GetXY();
-			const Vector2 v1 = mesh.vertices[vertexIdx1].position.GetXY();
-			const Vector2 v2 = mesh.vertices[vertexIdx2].position.GetXY();
-
-			//const ColorRGB colorV0{ mesh.vertices[vertexIdx0].color };
-			//const ColorRGB colorV1{ mesh.vertices[vertexIdx1].color };
-			//const ColorRGB colorV2{ mesh.vertices[vertexIdx2].color };
-
-			const Vector2 v0uv = mesh.vertices[vertexIdx0].uv;
-			const Vector2 v1uv = mesh.vertices[vertexIdx1].uv;
-			const Vector2 v2uv = mesh.vertices[vertexIdx2].uv;
-
-			const Vector2 edge01 = v1 - v0;
-			const Vector2 edge12 = v2 - v1;
-			const Vector2 edge20 = v0 - v2;
-
-			const float areaTriangle{ Vector2::Cross(v1 - v0, v2 - v0) };
-
-			if (areaTriangle <= 0.0001f)
+			if (vertexIdx0 == vertexIdx1 || vertexIdx1 == vertexIdx2 || vertexIdx0 == vertexIdx2)
 				continue;
 
+			if (!IsInFrustum(mesh.vertices_out[vertexIdx0])
+				|| !IsInFrustum(mesh.vertices_out[vertexIdx1])
+				|| !IsInFrustum(mesh.vertices_out[vertexIdx2]))
+				continue;
 
-			//RENDER LOGIC
-			for (int px{}; px < m_Width; ++px)
+			Vertex_Out Vertex1{ NDCToScreen(mesh.vertices_out[vertexIdx0]) };
+			Vertex_Out Vertex2{ NDCToScreen(mesh.vertices_out[vertexIdx1]) };
+			Vertex_Out Vertex3{ NDCToScreen(mesh.vertices_out[vertexIdx2]) };
+
+			//Setting up some variables
+			const Vector2 v0{ Vertex1.position.GetXY() };
+			const Vector2 v1{ Vertex2.position.GetXY() };
+			const Vector2 v2{ Vertex3.position.GetXY() };
+
+			const float depthV0{ Vertex1.position.z };
+			const float depthV1{ Vertex2.position.z };
+			const float depthV2{ Vertex3.position.z };
+
+			const float wV0{ Vertex1.position.w };
+			const float wV1{ Vertex2.position.w };
+			const float wV2{ Vertex3.position.w };
+
+			const Vector2 v0uv{ Vertex1.uv };
+			const Vector2 v1uv{ Vertex2.uv };
+			const Vector2 v2uv{ Vertex3.uv };
+
+			const Vector2 edge01{ v1 - v0 };
+			const Vector2 edge12{ v2 - v1 };
+			const Vector2 edge20{ v0 - v2 };
+
+			const float areaTriangle{ fabs(Vector2::Cross(v1 - v0, v2 - v0)) };
+
+			if (areaTriangle <= 0.01f)
 			{
-				for (int py{}; py < m_Height; ++py)
+				continue;
+			}
+
+			// create bounding box for triangle
+			const int bottom = std::min(int(std::min(v0.y, v1.y)), int(v2.y));
+			const int top = std::max(int(std::max(v0.y, v1.y)), int(v2.y)) + 1;
+
+			const int left = std::min(int(std::min(v0.x, v1.x)), int(v2.x));
+			const int right = std::max(int(std::max(v0.x, v1.x)), int(v2.x)) + 1;
+
+			// check if bounding box is in screen
+			if (left <= 0 || right >= m_Width - 1)
+				continue;
+
+			if (bottom <= 0 || top >= m_Height - 1)
+				continue;
+
+			const int offSet{ 1 };
+
+			////RENDER LOGIC
+		
+			//for (int px{}; px < m_Width; ++px)
+			//{
+			//	for (int py{}; py < m_Height; ++py)
+			//	{
+
+			for (int px = left - offSet; px < right + offSet; ++px)
+			{
+				for (int py = bottom - offSet; py < top + offSet; ++py)
 				{
-					if (!IsPixelInBoundingBoxOfTriangle(px, py, v0, v1, v2))
-						continue;
 
 
 					ColorRGB finalColor = colors::Black;
 
 					Vector2 pixel = { float(px), float(py) };
 
-
+					// Maths to check if the pixel is in the triangle
 					const Vector2 directionV0 = pixel - v0;
 					const Vector2 directionV1 = pixel - v1;
 					const Vector2 directionV2 = pixel - v2;
 
+					// If the code survives all the if and continues, its inside the triangle!
 					float weightV2 = Vector2::Cross(edge01, directionV0);
 					if (weightV2 < 0)
 						continue;
@@ -194,30 +260,45 @@ void Renderer::Render()
 					if (weightV1 < 0)
 						continue;
 
+					// Setting up the weights for the UV coordinates
 					weightV0 /= areaTriangle;
 					weightV1 /= areaTriangle;
 					weightV2 /= areaTriangle;
 
-					const float depthWeight =
-					{
-						weightV0 * meshes_world[0].vertices[vertexIdx0].position.z +
-						weightV1 * meshes_world[0].vertices[vertexIdx1].position.z +
-						weightV2 * meshes_world[0].vertices[vertexIdx2].position.z
-					};
-
-					if (depthWeight > m_pDepthBufferPixels[px * m_Height + py])
+					if (weightV0 + weightV1 + weightV2 < 1 - FLT_EPSILON
+						|| weightV0 + weightV1 + weightV2 > 1 + FLT_EPSILON)
 						continue;
 
-					m_pDepthBufferPixels[px * m_Height + py] = depthWeight;
+					const float ZBufferVal{
+						1.f /
+						((1 / depthV0) * weightV0 +
+						(1 / depthV1) * weightV1 +
+						(1 / depthV2) * weightV2)
+					};
 
-					//finalColor = colorV0 * weightV0 + colorV1 * weightV1 + colorV2 * weightV2;
+					if (ZBufferVal < 0 || ZBufferVal > 1)
+						continue;
 
-					const float Z0{ mesh.vertices[vertexIdx0].position.z };
-					const float Z1{ mesh.vertices[vertexIdx1].position.z };
-					const float Z2{ mesh.vertices[vertexIdx2].position.z };
-					const float Zinterpolated{ 1 / (1 / Z0 * weightV0 + 1 / Z1 * weightV1 + 1 / Z2 * weightV2) };
-					//Vector2 currUV{ v0uv * weightV0 + v1uv * weightV1 + v2uv * weightV2 };
-					Vector2 currUV{(v0uv/ Z0 * weightV0 + v1uv / Z1 * weightV1 + v2uv / Z2 * weightV2) * Zinterpolated };
+					if (ZBufferVal > m_pDepthBufferPixels[px * m_Height + py])
+						continue;
+
+					m_pDepthBufferPixels[px * m_Height + py] = ZBufferVal;
+
+
+					// Maths for sampling the UV coordinates and color
+					const float interpolatedWDepthWeight = {
+						1.f /
+						((1 / wV0) * weightV0 +
+						(1 / wV1) * weightV1 +
+						(1 / wV2) * weightV2)
+					};
+					
+					const Vector2 currUV = {
+						((v0uv / wV0) * weightV0 +
+						(v1uv / wV1) * weightV1 +
+						(v2uv / wV2) * weightV2) * interpolatedWDepthWeight
+					};
+
 					finalColor = m_pTexture->Sample(currUV);
 
 					//Update Color in Buffer
@@ -240,46 +321,41 @@ void Renderer::Render()
 	SDL_UpdateWindowSurface(m_pWindow);
 }
 
-void Renderer::VertexTransformationFunction(const std::vector<Vertex>& vertices_in, std::vector<Vertex>& vertices_out) const
+void Renderer::VertexTransformationFunction(std::vector<Mesh>& mesh_in) const
 {
-	//Todo > W1 Projection Stage
-	vertices_out.clear();
-	vertices_out.reserve(vertices_in.size());
-
-	for (Vertex vertex : vertices_in)
+	for (Mesh& mesh : mesh_in)
 	{
-		// to view space
-		vertex.position = Vector4{ m_Camera.viewMatrix.TransformPoint(vertex.position), 1 };
+		//Todo > W1 Projection Stage COMPLETED
+		mesh.vertices_out.clear();
+		mesh.vertices_out.reserve(mesh.vertices.size());
 
-		// to projection space
-		vertex.position.x /= vertex.position.z;
-		vertex.position.y /= vertex.position.z;
+		Matrix worldViewProjectionMatrix = mesh.worldMatrix * m_Camera.viewMatrix * m_Camera.projectionMatrix;
 
-		vertex.position.x /= (m_Camera.fov * m_AspectRatio);
-		vertex.position.y /= m_Camera.fov;
+		for (const Vertex& vtx : mesh.vertices)
+		{
 
-		// to screen/raster space
-		vertex.position.x = (vertex.position.x + 1) / 2.f * m_Width;
-		vertex.position.y = (1 - vertex.position.y) / 2.f * m_Height;
+			Vertex_Out vertexOut{};
+			
+			// to NDC-Space
+			vertexOut.position = worldViewProjectionMatrix.TransformPoint({ vtx.position, 1.0f });
 
-		vertices_out.push_back(vertex);
-	}
+			vertexOut.position.x /= vertexOut.position.w;
+			vertexOut.position.y /= vertexOut.position.w;
+			vertexOut.position.z /= vertexOut.position.w;
 
-}
+			vertexOut.color = vtx.color;
+			vertexOut.normal = vtx.normal;
+			vertexOut.uv = vtx.uv;
+			vertexOut.tangent = vtx.tangent;
 
-void Renderer::VertexTransformationFunction(const std::vector<Mesh>& mesh_in, std::vector<Mesh>& mesh_out) const
-{
-	//mesh_out.clear();
-	//mesh_out.reserve(mesh_in.size());
-
-	for (int i{}; i < mesh_in.size(); ++i)
-	{
-		VertexTransformationFunction(mesh_in[i].vertices, mesh_out[i].vertices);
+			mesh.vertices_out.emplace_back(vertexOut);
+		
+		}
 	}
 }
 
 
-bool dae::Renderer::IsPixelInBoundingBoxOfTriangle(int px, int py, const Vector2& v0, const Vector2& v1, const Vector2& v2) const
+bool Renderer::IsPixelInBoundingBoxOfTriangle(int px, int py, const Vector2& v0, const Vector2& v1, const Vector2& v2) const
 {
 	Vector2 bottomLeft{ std::min(std::min(v0.x, v1.x), v2.x),  std::min(std::min(v0.y, v1.y), v2.y) };
 
@@ -296,10 +372,34 @@ bool dae::Renderer::IsPixelInBoundingBoxOfTriangle(int px, int py, const Vector2
 	return false;
 }
 
+Vertex_Out Renderer::NDCToScreen(const Vertex_Out& vtx) const
+{
+	Vertex_Out vertex{ vtx };
+	vertex.position.x = (vtx.position.x + 1.f) * 0.5f * float(m_Width);
+	vertex.position.y = (1.f - vtx.position.y) * 0.5f * float(m_Height);
+	return vertex;
+}
+
+bool Renderer::IsInFrustum(const Vertex_Out & vtx) const
+{
+	if (vtx.position.x < -1 || vtx.position.x > 1)
+		return false;
+
+	if (vtx.position.y < -1 || vtx.position.y > 1)
+		return  false;
+
+	if (vtx.position.z < 0 || vtx.position.z > 1)
+		return  false;
+
+	return true;
+}
+
 void dae::Renderer::ClearBackground() const
 {
 	SDL_FillRect(m_pBackBuffer, NULL, SDL_MapRGB(m_pBackBuffer->format, 100, 100, 100));
 }
+
+
 
 bool Renderer::SaveBufferToImage() const
 {

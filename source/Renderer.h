@@ -43,17 +43,18 @@ namespace dae
 		float* m_pDepthBufferPixels{};
 
 		Camera m_Camera{};
-		float m_AspectRatio{};
 		Texture* m_pTexture;
 
 		int m_Width{};
 		int m_Height{};
 
 		//Function that transforms the vertices from the mesh from World space to Screen space
-		void VertexTransformationFunction(const std::vector<Vertex>& vertices_in, std::vector<Vertex>& vertices_out) const; //W1 Version
-		void VertexTransformationFunction(const std::vector<Mesh>& mesh_in, std::vector<Mesh>& mesh_out) const;
+		void VertexTransformationFunction(std::vector<Mesh>& mesh_in) const;
 
 		bool IsPixelInBoundingBoxOfTriangle(int px, int py, const Vector2& v0, const Vector2& v1, const Vector2& v2) const;
+		Vertex_Out NDCToScreen(const Vertex_Out& vtx) const;
+		bool IsInFrustum(const Vertex_Out& vtx) const;
+
 
 		void ClearBackground() const;
 
