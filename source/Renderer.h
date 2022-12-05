@@ -33,12 +33,15 @@ namespace dae
 
 		bool SaveBufferToImage() const;
 
+		void CycleVisualization();
 	private:
 		SDL_Window* m_pWindow{};
 
 		SDL_Surface* m_pFrontBuffer{ nullptr };
 		SDL_Surface* m_pBackBuffer{ nullptr };
 		uint32_t* m_pBackBufferPixels{};
+
+		std::vector<Mesh> m_MeshesWorld;
 
 		float* m_pDepthBufferPixels{};
 
@@ -54,9 +57,17 @@ namespace dae
 		bool IsPixelInBoundingBoxOfTriangle(int px, int py, const Vector2& v0, const Vector2& v1, const Vector2& v2) const;
 		Vertex_Out NDCToScreen(const Vertex_Out& vtx) const;
 		bool IsInFrustum(const Vertex_Out& vtx) const;
-
+		void UpdateVerticesUsingPrimTop(const Mesh& mesh, int& currIdx, int& vertexIdx0, int& vertexIdx1, int& vertexIdx2);
 
 		void ClearBackground() const;
+
+
+		enum class Visualize {
+			FinalColor = 0,
+			DepthBuffer = 1
+		};
+
+		Visualize m_Visualize{ Visualize::FinalColor };
 
 	};
 }

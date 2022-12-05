@@ -32,9 +32,72 @@ Renderer::Renderer(SDL_Window* pWindow) :
 	//Initialize Camera
 	m_Camera.Initialize(float(m_Width) / m_Height, 60.f, { 0.f, 0.f, -10.f });
 
+
+	// DEFINE MESH
 #if defined(tuktuk)
+	m_MeshesWorld.clear();
+	m_MeshesWorld.reserve(1);
+	m_MeshesWorld.emplace_back(Mesh{});
+
+	Utils::ParseOBJ("Resources/tuktuk.obj", m_MeshesWorld[0].vertices, m_MeshesWorld[0].indices);
+
+	const Vector3	position{ m_Camera.origin + Vector3{0, 0, 8} /* + Vector3{0, -3, 15} */ };
+	const Vector3	scale{ 0.5f, 0.5f, 0.5f };
+
+	m_MeshesWorld[0].worldMatrix = Matrix::CreateTranslation(Vector3{ 0,0,0 });
+
 	m_pTexture = m_pTexture->LoadFromFile("resources/tuktuk.png");
+
 #elif defined(UV_grid)
+	m_MeshesWorld.clear();
+	m_MeshesWorld.reserve(1);
+	m_MeshesWorld.emplace_back(
+		Mesh{
+			{
+			Vertex{Vector3{-3,3,-2},	ColorRGB{1,1,1},	Vector2{0,0}},
+			Vertex{Vector3{0,3,-2},		ColorRGB{1,1,1},	Vector2{0.5f, 0}},
+			Vertex{Vector3{3,3,-2},		ColorRGB{1,1,1},	Vector2{1,0}},
+			Vertex{Vector3{-3,0,-2},	ColorRGB{1,1,1},	Vector2{0,0.5f}},
+			Vertex{Vector3{0,0,-2},		ColorRGB{1,1,1},	Vector2{0.5f,0.5f}},
+			Vertex{Vector3{3,0,-2},		ColorRGB{1,1,1},	Vector2{1,0.5f}},
+			Vertex{Vector3{-3,-3,-2},	ColorRGB{1,1,1},	Vector2{0,1}},
+			Vertex{Vector3{0,-3,-2},	ColorRGB{1,1,1},	Vector2{0.5f,1}},
+			Vertex{Vector3{3,-3,-2},	ColorRGB{1,1,1},	Vector2{1,1}}
+			},
+		{
+			3,0,4,1,5,2,
+			2,6,
+			6,3,7,4,8,5
+		},
+		PrimitiveTopology::TriangleStrip,
+		{},
+		Matrix::CreateTranslation(Vector3{0,0,0})
+		}
+	);
+
+
+	//Mesh{
+	//{
+	//Vertex{Vector3{-3,3,-2},	ColorRGB{1,1,1},	Vector2{0,0}},
+	//Vertex{Vector3{0,3,-2},		ColorRGB{1,1,1},	Vector2{0.5f, 0}},
+	//Vertex{Vector3{3,3,-2},		ColorRGB{1,1,1},	Vector2{1,0}},
+	//Vertex{Vector3{-3,0,-2},	ColorRGB{1,1,1},	Vector2{0,0.5f}},
+	//Vertex{Vector3{0,0,-2},		ColorRGB{1,1,1},	Vector2{0.5f,0.5f}},
+	//Vertex{Vector3{3,0,-2},		ColorRGB{1,1,1},	Vector2{1,0.5f}},
+	//Vertex{Vector3{-3,-3,-2},	ColorRGB{1,1,1},	Vector2{0,1}},
+	//Vertex{Vector3{0,-3,-2},	ColorRGB{1,1,1},	Vector2{0.5f,1}},
+	//Vertex{Vector3{3,-3,-2},	ColorRGB{1,1,1},	Vector2{1,1}}
+	//},
+	//{
+	//	3,0,1,	1,4,3,	4,1,2,
+	//	2,5,4,	6,3,4,	4,7,6,
+	//	7,4,5,	5,8,7
+	//},
+	//PrimitiveTopology::TriangleList,
+	//{},
+	//Matrix::CreateTranslation(Vector3{0,0,0})
+	//}
+
 	m_pTexture = m_pTexture->LoadFromFile("resources/UV_grid_2.png");
 #endif
 }
@@ -61,76 +124,10 @@ void Renderer::Render()
 
 	ClearBackground();
 
-	// Define Mesh
-#if defined(tuktuk)
-	std::vector<Mesh> meshes_world{};
-	meshes_world.reserve(1);
-	meshes_world.emplace_back(Mesh{});
 
-	Utils::ParseOBJ("Resources/tuktuk.obj", meshes_world[0].vertices, meshes_world[0].indices);
+	VertexTransformationFunction(m_MeshesWorld);
 
-	const Vector3	position{ m_Camera.origin + Vector3{0, 0, 8} /* + Vector3{0, -3, 15} */ };
-	const Vector3	scale{ 0.5f, 0.5f, 0.5f };
-
-	meshes_world[0].worldMatrix = Matrix::CreateTranslation(Vector3{ 0,0,0 });
-
-
-#elif defined(UV_grid)
-	std::vector<Mesh> meshes_world
-	{
-		Mesh{
-				{
-				Vertex{Vector3{-3,3,-2},	ColorRGB{1,1,1},	Vector2{0,0}},
-				Vertex{Vector3{0,3,-2},		ColorRGB{1,1,1},	Vector2{0.5f, 0}},
-				Vertex{Vector3{3,3,-2},		ColorRGB{1,1,1},	Vector2{1,0}},
-				Vertex{Vector3{-3,0,-2},	ColorRGB{1,1,1},	Vector2{0,0.5f}},
-				Vertex{Vector3{0,0,-2},		ColorRGB{1,1,1},	Vector2{0.5f,0.5f}},
-				Vertex{Vector3{3,0,-2},		ColorRGB{1,1,1},	Vector2{1,0.5f}},
-				Vertex{Vector3{-3,-3,-2},	ColorRGB{1,1,1},	Vector2{0,1}},
-				Vertex{Vector3{0,-3,-2},	ColorRGB{1,1,1},	Vector2{0.5f,1}},
-				Vertex{Vector3{3,-3,-2},	ColorRGB{1,1,1},	Vector2{1,1}}
-				},
-		{
-			3,0,4,1,5,2,
-			2,6,
-			6,3,7,4,8,5
-		},
-		PrimitiveTopology::TriangleStrip,
-		{},
-		Matrix::CreateTranslation(Vector3{0,0,0})
-		}
-	};
-	//std::vector<Mesh> meshes_world
-	//{
-	//	Mesh{
-	//		{
-	//		Vertex{Vector3{-3,3,-2},	ColorRGB{1,1,1},	Vector2{0,0}},
-	//		Vertex{Vector3{0,3,-2},		ColorRGB{1,1,1},	Vector2{0.5f, 0}},
-	//		Vertex{Vector3{3,3,-2},		ColorRGB{1,1,1},	Vector2{1,0}},
-	//		Vertex{Vector3{-3,0,-2},	ColorRGB{1,1,1},	Vector2{0,0.5f}},
-	//		Vertex{Vector3{0,0,-2},		ColorRGB{1,1,1},	Vector2{0.5f,0.5f}},
-	//		Vertex{Vector3{3,0,-2},		ColorRGB{1,1,1},	Vector2{1,0.5f}},
-	//		Vertex{Vector3{-3,-3,-2},	ColorRGB{1,1,1},	Vector2{0,1}},
-	//		Vertex{Vector3{0,-3,-2},	ColorRGB{1,1,1},	Vector2{0.5f,1}},
-	//		Vertex{Vector3{3,-3,-2},	ColorRGB{1,1,1},	Vector2{1,1}}
-	//		},
-	//	{
-	//		3,0,1,	1,4,3,	4,1,2,
-	//		2,5,4,	6,3,4,	4,7,6,
-	//		7,4,5,	5,8,7
-	//	},
-	//	PrimitiveTopology::TriangleList,
-	//	{},
-	//	Matrix::CreateTranslation(Vector3{0,0,0})
-	//	}
-	//};
-#endif
-
-
-
-	VertexTransformationFunction(meshes_world);
-
-	for (Mesh& mesh : meshes_world)
+	for (Mesh& mesh : m_MeshesWorld)
 	{
 		for (int currIdx{}; currIdx < mesh.indices.size(); ++currIdx)
 		{
@@ -139,35 +136,12 @@ void Renderer::Render()
 			int vertexIdx2{};
 
 			// Updating vertexindeces depending on the certain primitiveTopology
-			if (meshes_world[0].primitiveTopology == PrimitiveTopology::TriangleList)
-			{
-				vertexIdx0 = mesh.indices[currIdx];
-				vertexIdx1 = mesh.indices[currIdx + 1];
-				vertexIdx2 = mesh.indices[currIdx + 2];
-				currIdx += 2;
-			}
-			else if (mesh.primitiveTopology == PrimitiveTopology::TriangleStrip)
-			{
-				vertexIdx0 = mesh.indices[currIdx];
+			UpdateVerticesUsingPrimTop(mesh, currIdx, vertexIdx0, vertexIdx1, vertexIdx2);
+			//vertexIdx0 = mesh.indices[currIdx];
+			//vertexIdx1 = mesh.indices[currIdx + 1];
+			//vertexIdx2 = mesh.indices[currIdx + 2];
+			//currIdx += 2;
 
-				if (currIdx % 2 == 0)
-				{
-					vertexIdx1 = mesh.indices[currIdx + 1];
-					vertexIdx2 = mesh.indices[currIdx + 2];
-				}
-				else
-				{
-					vertexIdx1 = mesh.indices[currIdx + 2];
-					vertexIdx2 = mesh.indices[currIdx + 1];
-				}
-
-				if (currIdx + 3 >= mesh.indices.size())
-					currIdx += 2;
-			}
-			else
-			{
-				assert(false);
-			}
 
 			if (vertexIdx0 == vertexIdx1 || vertexIdx1 == vertexIdx2 || vertexIdx0 == vertexIdx2)
 				continue;
@@ -265,9 +239,10 @@ void Renderer::Render()
 					weightV1 /= areaTriangle;
 					weightV2 /= areaTriangle;
 
-					if (weightV0 + weightV1 + weightV2 < 1 - FLT_EPSILON
-						|| weightV0 + weightV1 + weightV2 > 1 + FLT_EPSILON)
-						continue;
+					//// This continue should never get called but it is just a safety check
+					//if (weightV0 + weightV1 + weightV2 < 1 - 4 * FLT_EPSILON	// 4 Times epsilon because 3 floats get counted up 
+					//	|| weightV0 + weightV1 + weightV2 > 1 + 4 * FLT_EPSILON)// so worst case scenario the error is 3 times epsilon size
+					//	continue;												// (added 1 for actual epsilon on top of error size)
 
 					const float ZBufferVal{
 						1.f /
@@ -276,30 +251,45 @@ void Renderer::Render()
 						(1 / depthV2) * weightV2)
 					};
 
-					if (ZBufferVal < 0 || ZBufferVal > 1)
-						continue;
+					//// safety check
+					//if (ZBufferVal < 0 || ZBufferVal > 1)
+					//	continue;
 
+					// Check if there is no triangle in front of this triangle
 					if (ZBufferVal > m_pDepthBufferPixels[px * m_Height + py])
 						continue;
 
 					m_pDepthBufferPixels[px * m_Height + py] = ZBufferVal;
 
 
-					// Maths for sampling the UV coordinates and color
-					const float interpolatedWDepthWeight = {
-						1.f /
-						((1 / wV0) * weightV0 +
-						(1 / wV1) * weightV1 +
-						(1 / wV2) * weightV2)
-					};
-					
-					const Vector2 currUV = {
-						((v0uv / wV0) * weightV0 +
-						(v1uv / wV1) * weightV1 +
-						(v2uv / wV2) * weightV2) * interpolatedWDepthWeight
-					};
+					switch (m_Visualize)
+					{
+					case Visualize::FinalColor:
+					{
+						// Maths for sampling the UV coordinates and color
+						const float interpolatedWDepthWeight = {
+							1.f /
+							((1 / wV0) * weightV0 +
+							(1 / wV1) * weightV1 +
+							(1 / wV2) * weightV2)
+						};
 
-					finalColor = m_pTexture->Sample(currUV);
+						const Vector2 currUV = {
+							((v0uv / wV0) * weightV0 +
+							(v1uv / wV1) * weightV1 +
+							(v2uv / wV2) * weightV2) * interpolatedWDepthWeight
+						};
+
+						finalColor = m_pTexture->Sample(currUV);
+						break;
+					}
+					case Visualize::DepthBuffer:
+					{
+						float remapedBufferVal{ (ZBufferVal - 0.985f) / 0.015f };
+						finalColor = ColorRGB{ remapedBufferVal, remapedBufferVal , remapedBufferVal };
+						break;
+					}
+					}
 
 					//Update Color in Buffer
 					finalColor.MaxToOne();
@@ -394,14 +384,59 @@ bool Renderer::IsInFrustum(const Vertex_Out & vtx) const
 	return true;
 }
 
+void dae::Renderer::UpdateVerticesUsingPrimTop(const Mesh& mesh, int& currIdx, int& vertexIdx0, int& vertexIdx1, int& vertexIdx2)
+{
+	if (mesh.primitiveTopology == PrimitiveTopology::TriangleList)
+	{
+		vertexIdx0 = mesh.indices[currIdx];
+		vertexIdx1 = mesh.indices[currIdx + 1];
+		vertexIdx2 = mesh.indices[currIdx + 2];
+		currIdx += 2;
+		return;
+	}
+	if (mesh.primitiveTopology == PrimitiveTopology::TriangleStrip)
+	{
+		vertexIdx0 = mesh.indices[currIdx];
+
+		if (currIdx % 2 == 0)
+		{
+			vertexIdx1 = mesh.indices[currIdx + 1];
+			vertexIdx2 = mesh.indices[currIdx + 2];
+		}
+		else
+		{
+			vertexIdx1 = mesh.indices[currIdx + 2];
+			vertexIdx2 = mesh.indices[currIdx + 1];
+		}
+
+		if (currIdx + 3 >= mesh.indices.size())
+			currIdx += 2;
+	}
+	else
+	{
+		assert(false, "non-existing primitive topology");
+	}
+}
+
 void dae::Renderer::ClearBackground() const
 {
 	SDL_FillRect(m_pBackBuffer, NULL, SDL_MapRGB(m_pBackBuffer->format, 100, 100, 100));
 }
 
-
-
 bool Renderer::SaveBufferToImage() const
 {
 	return SDL_SaveBMP(m_pBackBuffer, "Rasterizer_ColorBuffer.bmp");
+}
+
+void dae::Renderer::CycleVisualization()
+{
+	switch (m_Visualize)
+	{
+	case Visualize::FinalColor:
+		m_Visualize = Visualize::DepthBuffer;
+		break;
+	case Visualize::DepthBuffer:
+		m_Visualize = Visualize::FinalColor;
+		break;
+	}
 }
