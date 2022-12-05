@@ -51,6 +51,9 @@ namespace dae
 		int m_Width{};
 		int m_Height{};
 
+		float m_MeshRotationAngle{};
+		bool m_IsSpinning{};
+
 		//Function that transforms the vertices from the mesh from World space to Screen space
 		void VertexTransformationFunction(std::vector<Mesh>& mesh_in) const;
 
@@ -58,6 +61,9 @@ namespace dae
 		Vertex_Out NDCToScreen(const Vertex_Out& vtx) const;
 		bool IsInFrustum(const Vertex_Out& vtx) const;
 		void UpdateVerticesUsingPrimTop(const Mesh& mesh, int& currIdx, int& vertexIdx0, int& vertexIdx1, int& vertexIdx2);
+		void DepthRemap(float& depth, float topPercentile);
+
+		void RotateMesh(float elapsedSec);
 
 		void ClearBackground() const;
 

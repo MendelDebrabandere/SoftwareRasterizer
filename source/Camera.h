@@ -45,6 +45,7 @@ namespace dae
 			fov = tanf((fovAngle * TO_RADIANS) / 2.f);
 
 			origin = _origin;
+			forward = Vector3::UnitZ;
 		}
 
 		void CalculateViewMatrix()
@@ -82,7 +83,7 @@ namespace dae
 
 			const float deltaTime = pTimer->GetElapsed();
 
-			const float movementSpeed = 5.f;
+			const float movementSpeed = 8.f;
 			const float mouseSens = 0.006f;
 
 			DoKeyboardInput(deltaTime, movementSpeed);
@@ -162,7 +163,7 @@ namespace dae
 			else if (mouseState & SDL_BUTTON_LMASK)
 			{
 				totalPitch -= mouseSens * mouseX;
-				this->origin -= moveSpeed * deltaTime * this->forward * mouseY;
+				this->origin -= moveSpeed * deltaTime * this->forward * float(mouseY);
 			}
 		}
 	};

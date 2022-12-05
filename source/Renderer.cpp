@@ -30,8 +30,10 @@ Renderer::Renderer(SDL_Window* pWindow) :
 
 
 	//Initialize Camera
-	m_Camera.Initialize(float(m_Width) / m_Height, 60.f, { 0.f, 0.f, -10.f });
+	m_Camera.Initialize(float(m_Width) / m_Height, 60.f, { 0.f, 5.f, -30.f });
 
+	//Spin mesh?
+	m_IsSpinning = true;
 
 	// DEFINE MESH
 #if defined(tuktuk)
@@ -41,7 +43,7 @@ Renderer::Renderer(SDL_Window* pWindow) :
 
 	Utils::ParseOBJ("Resources/tuktuk.obj", m_MeshesWorld[0].vertices, m_MeshesWorld[0].indices);
 
-	const Vector3	position{ m_Camera.origin + Vector3{0, 0, 8} /* + Vector3{0, -3, 15} */ };
+	const Vector3	position{ /*m_Camera.origin +*/ Vector3{0, 0, 0} /* + Vector3{0, -3, 15} */};
 	const Vector3	scale{ 0.5f, 0.5f, 0.5f };
 
 	m_MeshesWorld[0].worldMatrix = Matrix::CreateTranslation(Vector3{ 0,0,0 });
@@ -111,6 +113,11 @@ Renderer::~Renderer()
 void Renderer::Update(Timer* pTimer)
 {
 	m_Camera.Update(pTimer);
+
+	if (m_IsSpinning)
+	{
+		RotateMesh(pTimer->GetElapsed());
+	}
 }
 
 void Renderer::Render()
@@ -285,7 +292,10 @@ void Renderer::Render()
 					}
 					case Visualize::DepthBuffer:
 					{
-						float remapedBufferVal{ (ZBufferVal - 0.985f) / 0.015f };
+						const float depthRemapSize{ 0.005f };
+
+						float remapedBufferVal{ ZBufferVal };
+						DepthRemap(remapedBufferVal, depthRemapSize);
 						finalColor = ColorRGB{ remapedBufferVal, remapedBufferVal , remapedBufferVal };
 						break;
 					}
@@ -392,9 +402,8 @@ void dae::Renderer::UpdateVerticesUsingPrimTop(const Mesh& mesh, int& currIdx, i
 		vertexIdx1 = mesh.indices[currIdx + 1];
 		vertexIdx2 = mesh.indices[currIdx + 2];
 		currIdx += 2;
-		return;
 	}
-	if (mesh.primitiveTopology == PrimitiveTopology::TriangleStrip)
+	else if (mesh.primitiveTopology == PrimitiveTopology::TriangleStrip)
 	{
 		vertexIdx0 = mesh.indices[currIdx];
 
@@ -412,15 +421,27 @@ void dae::Renderer::UpdateVerticesUsingPrimTop(const Mesh& mesh, int& currIdx, i
 		if (currIdx + 3 >= mesh.indices.size())
 			currIdx += 2;
 	}
-	else
-	{
-		assert(false, "non-existing primitive topology");
-	}
+}
+
+void Renderer::DepthRemap(float& depth, float topPercentile)
+{
+	depth = (depth - (1.f - topPercentile)) / topPercentile;
+
+	depth = std::max(0.f, depth);
+	depth = std::min(1.f, depth);
+}
+
+void Renderer::RotateMesh(float elapsedSec)
+{
+	const float rotationSpeed{ 0.5f };
+	m_MeshRotationAngle += rotationSpeed * elapsedSec;
+	Matrix rotationMatrix{ Matrix::CreateRotationY(m_MeshRotationAngle) };
+	m_MeshesWorld[0].worldMatrix = rotationMatrix;
 }
 
 void dae::Renderer::ClearBackground() const
 {
-	SDL_FillRect(m_pBackBuffer, NULL, SDL_MapRGB(m_pBackBuffer->format, 100, 100, 100));
+	SDL_FillRect(m_pBackBuffer, NULL, SDL_MapRGB(m_pBackBuffer->format, 0, 0, 0));
 }
 
 bool Renderer::SaveBufferToImage() const
