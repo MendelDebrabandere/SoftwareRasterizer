@@ -433,7 +433,7 @@ void Renderer::DepthRemap(float& depth, float topPercentile)
 
 void Renderer::RotateMesh(float elapsedSec)
 {
-	const float rotationSpeed{ 0.5f };
+	const float rotationSpeed{ 1.f };
 	m_MeshRotationAngle += rotationSpeed * elapsedSec;
 	Matrix rotationMatrix{ Matrix::CreateRotationY(m_MeshRotationAngle) };
 	m_MeshesWorld[0].worldMatrix = rotationMatrix;
