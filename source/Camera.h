@@ -83,7 +83,7 @@ namespace dae
 
 			const float deltaTime = pTimer->GetElapsed();
 
-			const float movementSpeed = 8.f;
+			const float movementSpeed = 13.f;
 			const float mouseSens = 0.006f;
 
 			DoKeyboardInput(deltaTime, movementSpeed);
@@ -162,7 +162,7 @@ namespace dae
 			}
 			else if (mouseState & SDL_BUTTON_LMASK)
 			{
-				totalPitch -= mouseSens * mouseX;
+				totalYaw += mouseSens * mouseX;
 				this->origin -= moveSpeed * deltaTime * this->forward * float(mouseY);
 			}
 		}

@@ -65,6 +65,12 @@ int main(int argc, char* args[])
 					takeScreenshot = true;
 				else if (e.key.keysym.sym == SDLK_F4)
 					pRenderer->CycleVisualization();
+				else if (e.key.keysym.sym == SDLK_F5)
+					pRenderer->ToggleSpinning();
+				else if (e.key.keysym.sym == SDLK_F6)
+					pRenderer->ToggleNormalMap();
+				else if (e.key.keysym.sym == SDLK_F7)
+					pRenderer->CycleShadingMode();
 				break;
 			}
 		}
