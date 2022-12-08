@@ -589,9 +589,9 @@ ColorRGB Renderer::PixelShading(Vertex_Out v) const
 
 	const ColorRGB ambient{ 0.025f, 0.025f, 0.025f };
 
-	//finalColor += ambient;
+	finalColor += ambient;
 
-	//MaxToOne(finalColor);
+	MaxToOne(finalColor);
 
 	return finalColor;
 }
