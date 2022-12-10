@@ -443,9 +443,9 @@ void Renderer::VertexTransformationFunction(std::vector<Mesh>& mesh_in) const
 
 bool Renderer::IsPixelInBoundingBoxOfTriangle(int px, int py, const Vector2& v0, const Vector2& v1, const Vector2& v2) const
 {
-	Vector2 bottomLeft{ std::min(std::min(v0.x, v1.x), v2.x),  std::min(std::min(v0.y, v1.y), v2.y) };
+	const Vector2 bottomLeft{ std::min(std::min(v0.x, v1.x), v2.x),  std::min(std::min(v0.y, v1.y), v2.y) };
 
-	Vector2 topRight{ std::max(std::max(v0.x, v1.x), v2.x),  std::max(std::max(v0.y, v1.y), v2.y) };
+	const Vector2 topRight{ std::max(std::max(v0.x, v1.x), v2.x),  std::max(std::max(v0.y, v1.y), v2.y) };
 
 	if (px <= topRight.x && px >= bottomLeft.x)
 	{
@@ -520,7 +520,8 @@ void Renderer::DepthRemap(float& depth, float topPercentile) const
 ColorRGB Renderer::PixelShading(Vertex_Out v) const
 {
 	// Light settings
-	const Vector3 lightDirection{ 0.577f, -0.577f, 0.577f };
+	Vector3 lightDirection{ 0.577f, -0.577f, 0.577f };
+	lightDirection.Normalize();
 	const float lightIntensity{ 7.f };
 	const float specularShininess{ 25.f };
 
@@ -540,9 +541,8 @@ ColorRGB Renderer::PixelShading(Vertex_Out v) const
 	}
 
 
-
 	// OBSERVED AREA
-	float ObservedArea{ Vector3::Dot(v.normal,  -lightDirection) };
+	float ObservedArea{ Vector3::Dot(v.normal,  -lightDirection)};
 	ObservedArea = std::max(ObservedArea, 0.f);
 	const ColorRGB observedAreaRGB{ ObservedArea ,ObservedArea ,ObservedArea };
 
@@ -576,7 +576,7 @@ ColorRGB Renderer::PixelShading(Vertex_Out v) const
 	case ShadingMode::Specular:
 	{
 
-		finalColor += specular * observedAreaRGB;
+		finalColor += specular;// *observedAreaRGB;
 		break;
 	}
 	case ShadingMode::Combined:
