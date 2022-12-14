@@ -343,7 +343,7 @@ void Renderer::Render()
 					}
 					case Visualize::DepthBuffer:
 					{
-						const float depthRemapSize{ 0.005f };
+						constexpr float depthRemapSize{ 0.005f };
 
 						float remapedBufferVal{ ZBufferVal };
 						DepthRemap(remapedBufferVal, depthRemapSize);
@@ -522,18 +522,18 @@ ColorRGB Renderer::PixelShading(Vertex_Out v) const
 	// Light settings
 	Vector3 lightDirection{ 0.577f, -0.577f, 0.577f };
 	lightDirection.Normalize();
-	const float lightIntensity{ 7.f };
-	const float specularShininess{ 25.f };
+	constexpr float lightIntensity{ 7.f };
+	constexpr float specularShininess{ 25.f };
 
 
 	if (m_UseNormalMap)
-	{
+	{	
 		const Vector3 biNormal = Vector3::Cross(v.normal, v.tangent);
 		const Matrix tangentSpaceAxis = { v.tangent, biNormal, v.normal, Vector3::Zero };
 
 		const ColorRGB normalColor = m_pNormalMap->Sample(v.uv);
 		Vector3 sampledNormal = { normalColor.r, normalColor.g, normalColor.b };
-		sampledNormal = 2.f * sampledNormal - Vector3{ 1, 1, 1 };
+		sampledNormal = 2.f * sampledNormal - Vector3{ 1.f, 1.f, 1.f };
 
 		sampledNormal = tangentSpaceAxis.TransformVector(sampledNormal);
 
@@ -544,6 +544,7 @@ ColorRGB Renderer::PixelShading(Vertex_Out v) const
 	// OBSERVED AREA
 	float ObservedArea{ Vector3::Dot(v.normal,  -lightDirection)};
 	ObservedArea = std::max(ObservedArea, 0.f);
+	
 	const ColorRGB observedAreaRGB{ ObservedArea ,ObservedArea ,ObservedArea };
 
 	// DIFFUSE
@@ -587,9 +588,9 @@ ColorRGB Renderer::PixelShading(Vertex_Out v) const
 	}
 	}
 
-	const ColorRGB ambient{ 0.025f, 0.025f, 0.025f };
+	constexpr ColorRGB ambient{ 0.025f, 0.025f, 0.025f };
 
-	finalColor += ambient;
+	//finalColor += ambient;
 
 	MaxToOne(finalColor);
 
@@ -609,7 +610,7 @@ void dae::Renderer::MaxToOne(ColorRGB& finalColor)
 
 void Renderer::RotateMesh(float elapsedSec)
 {
-	const float rotationSpeed{ 1.f };
+	constexpr float rotationSpeed{ 1.f };
 	m_MeshRotationAngle += rotationSpeed * elapsedSec;
 }
 
