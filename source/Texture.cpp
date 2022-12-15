@@ -4,8 +4,8 @@
 
 namespace dae
 {
-	Texture::Texture(SDL_Surface* pSurface) :
-		m_pSurface{ pSurface },
+	Texture::Texture(SDL_Surface* pSurface)
+		:m_pSurface{ pSurface },
 		m_pSurfacePixels{ (uint32_t*)pSurface->pixels }
 	{
 	}
