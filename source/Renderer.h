@@ -74,7 +74,6 @@ namespace dae
 		static void UpdateVerticesUsingPrimTop(const Mesh& mesh, int& currIdx, int& vertexIdx0, int& vertexIdx1, int& vertexIdx2);
 		void DepthRemap(float& depth, float topPercentile) const;
 		ColorRGB PixelShading(Vertex_Out v) const;
-		static void MaxToOne(ColorRGB& finalColor);
 
 		void RotateMesh(float elapsedSec);
 

@@ -10,6 +10,8 @@
 #include "Texture.h"
 #include "Utils.h"
 
+#include <iostream>
+
 using namespace dae;
 
 //#define UV_grid
@@ -108,8 +110,10 @@ Renderer::Renderer(SDL_Window* pWindow) :
 	Utils::ParseOBJ("Resources/vehicle.obj", m_MeshesWorld[0].vertices, m_MeshesWorld[0].indices);
 
 	const Vector3 position{ 0, 0, 50 };
+	//const Vector3 position{ 12.4f, -0.7f, 7.5f };
+	constexpr float YRotation{ PI_DIV_2 };
 
-	m_MeshesWorld[0].worldMatrix = Matrix::CreateTranslation(position);
+	m_MeshesWorld[0].worldMatrix = Matrix::CreateRotationY(YRotation) * Matrix::CreateTranslation(position);
 	m_MeshOriginalWorldMatrix = m_MeshesWorld[0].worldMatrix;
 
 
@@ -592,20 +596,9 @@ ColorRGB Renderer::PixelShading(Vertex_Out v) const
 
 	//finalColor += ambient;
 
-	MaxToOne(finalColor);
+	finalColor.MaxToOne();
 
 	return finalColor;
-}
-
-void dae::Renderer::MaxToOne(ColorRGB& finalColor)
-{
-	finalColor.r = std::min(1.f, finalColor.r);
-	finalColor.g = std::min(1.f, finalColor.g);
-	finalColor.b = std::min(1.f, finalColor.b);
-
-	finalColor.r = std::max(0.f, finalColor.r);
-	finalColor.g = std::max(0.f, finalColor.g);
-	finalColor.b = std::max(0.f, finalColor.b);
 }
 
 void Renderer::RotateMesh(float elapsedSec)
