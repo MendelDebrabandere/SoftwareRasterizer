@@ -111,7 +111,7 @@ Renderer::Renderer(SDL_Window* pWindow) :
 
 	const Vector3 position{ 0, 0, 50 };
 	//const Vector3 position{ 12.4f, -0.7f, 7.5f };
-	constexpr float YRotation{ PI_DIV_2 };
+	constexpr float YRotation{ -PI_DIV_2 };
 
 	m_MeshesWorld[0].worldMatrix = Matrix::CreateRotationY(YRotation) * Matrix::CreateTranslation(position);
 	m_MeshOriginalWorldMatrix = m_MeshesWorld[0].worldMatrix;
