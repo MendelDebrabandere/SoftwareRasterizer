@@ -586,8 +586,7 @@ ColorRGB Renderer::PixelShading(Vertex_Out v) const
 	}
 	case ShadingMode::Combined:
 	{
-		finalColor += lightIntensity * observedAreaRGB * TextureColor / PI;
-		finalColor += specular;
+		finalColor += (lightIntensity * TextureColor / PI + specular) * observedAreaRGB;
 		break;
 	}
 	}
