@@ -196,14 +196,6 @@ void Renderer::Render()
 			const float depthV1{ Vertex1.position.z };
 			const float depthV2{ Vertex2.position.z };
 
-			const float wV0{ Vertex0.position.w };
-			const float wV1{ Vertex1.position.w };
-			const float wV2{ Vertex2.position.w };
-
-			const Vector2 v0uv{ Vertex0.uv };
-			const Vector2 v1uv{ Vertex1.uv };
-			const Vector2 v2uv{ Vertex2.uv };
-
 			const Vector2 edge01{ v1 - v0 };
 			const Vector2 edge12{ v2 - v1 };
 			const Vector2 edge20{ v0 - v2 };
@@ -606,7 +598,7 @@ void Renderer::RotateMesh(float elapsedSec)
 	m_MeshRotationAngle += rotationSpeed * elapsedSec;
 }
 
-void dae::Renderer::ClearBackground() const
+void Renderer::ClearBackground() const
 {
 	SDL_FillRect(m_pBackBuffer, NULL, SDL_MapRGB(m_pBackBuffer->format, 100, 100, 100));
 }
@@ -616,7 +608,7 @@ bool Renderer::SaveBufferToImage() const
 	return SDL_SaveBMP(m_pBackBuffer, "Rasterizer_ColorBuffer.bmp");
 }
 
-void dae::Renderer::CycleVisualization()
+void Renderer::CycleVisualization()
 {
 	switch (m_Visualize)
 	{
